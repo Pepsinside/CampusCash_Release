@@ -706,6 +706,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
         masternodePayee = devopsPayee;
     }
 
+
     CScript devopsScript = GetScriptForDestination(CBitcoinAddress(devopsPayee).Get());
     CScript masternodeScript = GetScriptForDestination(CBitcoinAddress(masternodePayee).Get());
 
