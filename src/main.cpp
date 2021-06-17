@@ -2716,14 +2716,15 @@ bool CBlock::IsRewardStructureValid(CBlockIndex* pindexLast)
 
             if(!containsMasternodePayment)
             {
-                if(mnodeman.IsPayeeAnExpiredMasternode(vtx[nTxIndex].vout[nMasternodeIndex].scriptPubKey))
-                    containsMasternodePayment = true;
                 //TODO Remove this after beta-test
                 /*
-                else{
+                if(mnodeman.IsPayeeAnExpiredMasternode(vtx[nTxIndex].vout[nMasternodeIndex].scriptPubKey))
+                    containsMasternodePayment = true;
+                
+                else{*/
                     containsMasternodePayment = true;
                     LogPrintf("WARNING: IsRewardStructureValid() : Wrong Masternode winner\n");
-                }*/
+               /* }*/
             }
         } 
         else 
