@@ -434,18 +434,29 @@ CMasternode *CMasternodeMan::FindRandomNotInVec(std::vector<CTxIn> &vecToExclude
     return NULL;
 }
 
-CMasternode* CMasternodeMan::GetCurrentMasterNode(int mod, int64_t nBlockHeight, int minProtocol)
+CMasternode* CMasternodeMan::GetCurrentMasterNode(CBlockIndex* pindexLast, int minProtocol)
 {
     unsigned int score = 0;
     CMasternode* winner = NULL;
+
+    CBlockIndex* pindexLoop = pindexLast;
+
+    for (int i=0; i<10; i++)
+    {
+        if(pindexLoop->pprev) pindexLoop = pindexLoop->pprev;
+        else return NULL;
+    }
+
+    int64_t nSigTimeThreshold = pindexLoop->GetBlockTime();
 
     // scan for winner
     BOOST_FOREACH(CMasternode& mn, vMasternodes) {
         mn.Check();
         if(mn.protocolVersion < minProtocol || !mn.IsEnabled()) continue;
+        if(mn.sigTime > nSigTimeThreshold) continue;
 
         // calculate the score for each masternode
-        uint256 n = mn.CalculateScore(mod, nBlockHeight);
+        uint256 n = mn.CalculateScore(1, pindexLast->nHeight, pindexLast->GetBlockHash());
         unsigned int n2 = 0;
         memcpy(&n2, &n, sizeof(n2));
 
@@ -477,6 +488,21 @@ bool CMasternodeMan::IsPayeeAValidMasternode(CScript payee)
            fValid = true;
     }
     return fValid;
+}
+
+bool CMasternodeMan::IsPayeeAnExpiredMasternode(CScript payee)
+{
+    BOOST_FOREACH(CMasternode& mn, vMasternodes) {
+
+        mn.Check();
+        if(mn.Status() != "EXPIRED") continue;
+
+        CScript currentMasternode = GetScriptForDestination(mn.pubkey.GetID());
+        if(payee == currentMasternode)
+           return true;
+    }
+
+    return false;
 }
 
 int CMasternodeMan::GetMasternodeRank(const CTxIn& vin, int64_t nBlockHeight, int minProtocol, bool fOnlyActive)

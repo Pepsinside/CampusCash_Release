@@ -379,7 +379,7 @@ CBlock* CreateNewBlock(CReserveKey& reservekey, bool fProofOfStake, int64_t* pFe
 
             CTxIn vin;
             CScript payee;
-            if(masternodePayments.GetWinningMasternode(pindexPrev->nHeight+1, vin, payee))
+            if(masternodePayments.GetWinningMasternode(pindexPrev, vin, payee))
             {   
                 cMasternodePayee = payee;
                 int64_t nTier2Bonus = GetTier2MasternodeBonusPayment(pindexPrev, vin);

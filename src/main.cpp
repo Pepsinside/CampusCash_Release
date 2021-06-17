@@ -2638,15 +2638,15 @@ bool CBlock::AcceptBlock()
 
         if(!fImporting && !fReindex && pindexBest->nHeight > nBlockEstimate)
         {
-            CScript payee;
-            if(masternodePayments.GetWinningMasternode(pindexBest->nHeight, vin, payee))
+            /*CScript payee;
+            if(masternodePayments.GetWinningMasternode(pindexPrev, vin, payee))
             {
                CMasternode* pmn = mnodeman.Find(vin);
                 if(pmn != NULL) {
                     pmn->nLastPaid = GetAdjustedTime();
                     LogPrintf("ProcessBlock() : Update Masternode Last Paid Time - %d , time : %d\n", pindexBest->nHeight, pmn->nLastPaid);
                 }
-            }
+            }*/
 
             if(!fLiteMode)
             {
@@ -2654,13 +2654,13 @@ bool CBlock::AcceptBlock()
             }
         } 
      
-        masternodePayments.ProcessBlock(pindexBest->nHeight+1);
+        //masternodePayments.ProcessBlock(pindexBest->nHeight+1);
     }
 
     return true;
 }
 
-bool CBlock::IsRewardStructureValid(const CBlockIndex* pindexLast)
+bool CBlock::IsRewardStructureValid(CBlockIndex* pindexLast)
 {
     // Validation starts after nRewardSystemUpdate2
     if(pindexLast->GetBlockTime() <= nRewardSystemUpdate2)
@@ -2676,6 +2676,8 @@ bool CBlock::IsRewardStructureValid(const CBlockIndex* pindexLast)
     CScript masternodePayee = devopsPayee;
 
     int nTxIndex = IsProofOfStake() ? 1 : 0;
+    int nMasternodeIndex;
+    int nCount=0;
     bool containsDevopsPayment = false;
     bool containsMasternodePayment = false;
     
@@ -2683,25 +2685,45 @@ bool CBlock::IsRewardStructureValid(const CBlockIndex* pindexLast)
     {
         if(txOut.scriptPubKey == devopsPayee && txOut.nValue == devopsPayment) 
             containsDevopsPayment = true;
-        if(!IsProofOfStake() && (txOut.nValue == masternodePayment || txOut.nValue == masternodePayment + nTier2MasternodeBonusFees)) 
+        if(!IsProofOfStake() && (txOut.nValue == masternodePayment || txOut.nValue == masternodePayment + nTier2MasternodeBonusFees))
+        { 
+            nMasternodeIndex = nCount;
             containsMasternodePayment = true;
+        }
+
+        nCount++;
     }
 
     if(IsProofOfStake() && (vtx[1].vout[vtx[1].vout.size()-2].nValue == masternodePayment || vtx[1].vout[vtx[1].vout.size()-2].nValue == masternodePayment + nTier2MasternodeBonusFees))
-        containsMasternodePayment = true;   
+    {
+        nMasternodeIndex = vtx[1].vout.size()-2;
+        containsMasternodePayment = true;
+    }   
 
     if (!IsInitialBlockDownload() && !fLiteMode && containsMasternodePayment)
     {
         containsMasternodePayment = false;
 
         CTxIn vin;
-        if(masternodePayments.GetWinningMasternode(pindexLast->nHeight+1, vin, masternodePayee))
+        if(masternodePayments.GetWinningMasternode(pindexLast, vin, masternodePayee))
         {   
             masternodePayment += GetTier2MasternodeBonusPayment(pindexLast, vin);
 
             BOOST_FOREACH(CTxOut& txOut, vtx[nTxIndex].vout)
             {
                 if(txOut.scriptPubKey == masternodePayee && txOut.nValue == masternodePayment) containsMasternodePayment = true;
+            }
+
+            if(!containsMasternodePayment)
+            {
+                if(mnodeman.IsPayeeAnExpiredMasternode(vtx[nTxIndex].vout[nMasternodeIndex].scriptPubKey))
+                    containsMasternodePayment = true;
+                //TODO Remove this after beta-test
+                /*
+                else{
+                    containsMasternodePayment = true;
+                    LogPrintf("WARNING: IsRewardStructureValid() : Wrong Masternode winner\n");
+                }*/
             }
         } 
         else 

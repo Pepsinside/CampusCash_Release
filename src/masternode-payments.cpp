@@ -148,14 +148,26 @@ uint64_t CMasternodePayments::CalculateScore(uint256 blockHash, CTxIn& vin)
 }
 
 
-bool CMasternodePayments::GetWinningMasternode(int nBlockHeight, CTxIn& vin, CScript& payee)
+bool CMasternodePayments::GetWinningMasternode(CBlockIndex* pindexLast, CTxIn& vin, CScript& payee)
 {
-    if(mWinning.count(nBlockHeight) != 0)
+    if(IsInitialBlockDownload()) return false;
+    
+    CMasternode* winningNode = mnodeman.GetCurrentMasterNode(pindexLast);
+    
+    if(winningNode)
+    {
+        payee = GetScriptForDestination(winningNode->pubkey.GetID());
+        vin = winningNode->vin;
+        return true; 
+    }
+
+    
+    /*if(mWinning.count(nBlockHeight) != 0)
     {
         vin = mWinning[nBlockHeight].vin;
         payee = mWinning[nBlockHeight].payee;
         return true;
-    }
+    }*/
 
     return false;
 }
@@ -202,7 +214,7 @@ bool CMasternodePayments::ProcessBlock(int nBlockHeight)
 
     CMasternodePaymentWinner newWinner;
 
-    CMasternode *pmn = mnodeman.GetCurrentMasterNode(1);
+    CMasternode *pmn = mnodeman.GetCurrentMasterNode(pindexBest);
     if(pmn == NULL) 
     {
         LogPrintf("Masternode-Payments::ProcessBlock - FAILED - No masternodes detected...\n");

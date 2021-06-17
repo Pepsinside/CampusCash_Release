@@ -73,7 +73,7 @@ Value getstakesubsidy(const Array& params, bool fHelp)
 
     CTxIn vin;
     CScript payee;
-    if(masternodePayments.GetWinningMasternode(pindexBest->nHeight+1, vin, payee))
+    if(masternodePayments.GetWinningMasternode(pindexBest, vin, payee))
     {   
         return (uint64_t)GetProofOfStakeReward(pindexBest, 0) + (uint64_t)GetTier2MasternodeBonusPayment(pindexBest, vin);
     } 
@@ -97,7 +97,7 @@ Value getmininginfo(const Array& params, bool fHelp)
     int64_t nRewardPoS = GetProofOfStakeReward(pindexBest, 0);
     CTxIn vin;
     CScript payee;
-    if(masternodePayments.GetWinningMasternode(pindexBest->nHeight+1, vin, payee))
+    if(masternodePayments.GetWinningMasternode(pindexBest, vin, payee))
     {   
         int64_t tier2Bonus = GetTier2MasternodeBonusPayment(pindexBest, vin);
         nRewardPoW += tier2Bonus;
@@ -693,7 +693,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
 
     CTxIn vin;
     CScript payee;
-    if(masternodePayments.GetWinningMasternode(pindexPrev->nHeight+1, vin, payee))
+    if(masternodePayments.GetWinningMasternode(pindexPrev, vin, payee))
     {   
         CTxDestination address1;
         ExtractDestination(payee, address1);

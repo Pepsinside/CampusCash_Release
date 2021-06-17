@@ -3039,7 +3039,7 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
 
     CTxIn vin;
     CScript payee;
-    if(masternodePayments.GetWinningMasternode(pindexPrev->nHeight+1, vin, payee))
+    if(masternodePayments.GetWinningMasternode(pindexPrev, vin, payee))
     {   
         cMasternodePayee = payee;
         int64_t nTier2Bonus = GetTier2MasternodeBonusPayment(pindexPrev, vin);
