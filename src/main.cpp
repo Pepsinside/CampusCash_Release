@@ -1989,7 +1989,7 @@ bool CBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex, bool fJustCheck)
 
     if (IsProofOfWork())
     {
-        int64_t nCalculatedReward = GetProofOfWorkReward(nFees);
+        int64_t nCalculatedReward = GetProofOfWorkReward(pindex->pprev, nFees);
 
         // Old reward structures to allow sync from 0
         if(pindex->pprev->GetBlockTime() <= nRewardSystemUpdate)
@@ -2007,16 +2007,11 @@ bool CBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex, bool fJustCheck)
     }
     if (IsProofOfStake())
     {
-        int64_t nCalculatedStakeReward = GetProofOfStakeReward(nFees);
+        int64_t nCalculatedStakeReward = GetProofOfStakeReward(pindex->pprev, nFees);
 
         if (nStakeReward != nCalculatedStakeReward && nStakeReward != nCalculatedStakeReward + nTier2MasternodeBonusFees){
             return DoS(50, error("ConnectBlock() : coinstake pays too much(actual=%d vs calculated=%d)", nStakeReward, nCalculatedStakeReward));
         }
-    }
-
-    if(!IsInitialBlockDownload())
-    {
-        //TODO check MN and Devops payments
     }
 
     // ppcoin: track money supply and mint amount info
@@ -2613,6 +2608,10 @@ bool CBlock::AcceptBlock()
         !std::equal(expect.begin(), expect.end(), vtx[0].vin[0].scriptSig.begin()))
         return DoS(100, error("AcceptBlock() : block height mismatch in coinbase"));
 
+    // Check that the reward structure is correct
+    if (!IsRewardStructureValid(pindexPrev))
+        return error("AcceptBlock() : invalid reward structure");
+
     // Write block to history file
     if (!CheckDiskSpace(::GetSerializeSize(*this, SER_DISK, CLIENT_VERSION)))
         return error("AcceptBlock() : out of disk space");
@@ -2660,6 +2659,69 @@ bool CBlock::AcceptBlock()
 
     return true;
 }
+
+bool CBlock::IsRewardStructureValid(const CBlockIndex* pindexLast)
+{
+    // Validation starts after nRewardSystemUpdate2
+    if(pindexLast->GetBlockTime() <= nRewardSystemUpdate2)
+        return true;
+    
+    // HardCap
+    if(pindexBest->nMoneySupply > MAX_SINGLE_TX) 
+        return true;
+
+    int64_t masternodePayment = GetMasternodePayment(pindexLast);
+    int64_t devopsPayment = GetDevOpsPayment(pindexLast);
+    CScript devopsPayee = GetScriptForDestination(CBitcoinAddress(Params().DevOpsAddress()).Get());
+    CScript masternodePayee = devopsPayee;
+
+    int nTxIndex = IsProofOfStake() ? 1 : 0;
+    bool containsDevopsPayment = false;
+    bool containsMasternodePayment = false;
+    
+    BOOST_FOREACH(CTxOut& txOut, vtx[nTxIndex].vout)
+    {
+        if(txOut.scriptPubKey == devopsPayee && txOut.nValue == devopsPayment) 
+            containsDevopsPayment = true;
+        if(!IsProofOfStake() && (txOut.nValue == masternodePayment || txOut.nValue == masternodePayment + nTier2MasternodeBonusFees)) 
+            containsMasternodePayment = true;
+    }
+
+    if(IsProofOfStake() && (vtx[1].vout[vtx[1].vout.size()-2].nValue == masternodePayment || vtx[1].vout[vtx[1].vout.size()-2].nValue == masternodePayment + nTier2MasternodeBonusFees))
+        containsMasternodePayment = true;   
+
+    if (!IsInitialBlockDownload() && !fLiteMode && containsMasternodePayment)
+    {
+        containsMasternodePayment = false;
+
+        CTxIn vin;
+        if(masternodePayments.GetWinningMasternode(pindexLast->nHeight+1, vin, masternodePayee))
+        {   
+            masternodePayment += GetTier2MasternodeBonusPayment(pindexLast, vin);
+
+            BOOST_FOREACH(CTxOut& txOut, vtx[nTxIndex].vout)
+            {
+                if(txOut.scriptPubKey == masternodePayee && txOut.nValue == masternodePayment) containsMasternodePayment = true;
+            }
+        } 
+        else 
+        {
+            containsMasternodePayment = true;
+            LogPrintf("WARNING: IsRewardStructureValid() : Could not find Masternode winner!\n");
+        }
+    }
+
+    if(!containsMasternodePayment)
+        return error("IsRewardStructureValid() : Masternode payment missing or incorrect");
+        
+    if(!containsDevopsPayment)
+        return error("IsRewardStructureValid() : Devops payment missing or incorrect");
+    
+    LogPrintf("IsRewardStructureValid() : Reward structure is valid\n");
+    
+    return true;
+}
+
 
 /* Calculates trust score for a block given */
 uint256 CBlockIndex::GetBlockTrust() const

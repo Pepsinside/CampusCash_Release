@@ -370,19 +370,19 @@ CBlock* CreateNewBlock(CReserveKey& reservekey, bool fProofOfStake, int64_t* pFe
         // > CCASH <
         if (!fProofOfStake)
         {
-            int64_t blockReward = GetProofOfWorkReward(nFees);
+            int64_t blockReward = GetProofOfWorkReward(pindexPrev, nFees);
 
             CScript cDevopsPayee = GetScriptForDestination(CBitcoinAddress(Params().DevOpsAddress()).Get());
             CScript cMasternodePayee;
-            int64_t nDevopsPayment = GetDevOpsPayment();
-            int64_t nMasternodePayment = GetMasternodePayment();
+            int64_t nDevopsPayment = GetDevOpsPayment(pindexPrev);
+            int64_t nMasternodePayment = GetMasternodePayment(pindexPrev);
 
             CTxIn vin;
             CScript payee;
             if(masternodePayments.GetWinningMasternode(pindexPrev->nHeight+1, vin, payee))
             {   
                 cMasternodePayee = payee;
-                int64_t nTier2Bonus = GetTier2MasternodeBonusPayment(vin);
+                int64_t nTier2Bonus = GetTier2MasternodeBonusPayment(pindexPrev, vin);
                 blockReward += nTier2Bonus;
                 nMasternodePayment += nTier2Bonus;
             } 

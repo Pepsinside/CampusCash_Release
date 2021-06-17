@@ -49,7 +49,7 @@ Value getsubsidy(const Array& params, bool fHelp)
             "getsubsidy [nTarget]\n"
             "Returns proof-of-work subsidy value for the specified value of target.");
 
-    return (int64_t)GetProofOfStakeReward(0);
+    return (int64_t)GetProofOfStakeReward(pindexBest, 0);
 }
 
 Value getstakesubsidy(const Array& params, bool fHelp)
@@ -75,10 +75,10 @@ Value getstakesubsidy(const Array& params, bool fHelp)
     CScript payee;
     if(masternodePayments.GetWinningMasternode(pindexBest->nHeight+1, vin, payee))
     {   
-        return (uint64_t)GetProofOfStakeReward(0) + (uint64_t)GetTier2MasternodeBonusPayment(vin);
+        return (uint64_t)GetProofOfStakeReward(pindexBest, 0) + (uint64_t)GetTier2MasternodeBonusPayment(pindexBest, vin);
     } 
         
-    return (uint64_t)GetProofOfStakeReward(0);
+    return (uint64_t)GetProofOfStakeReward(pindexBest, 0);
 }
 
 Value getmininginfo(const Array& params, bool fHelp)
@@ -93,13 +93,13 @@ Value getmininginfo(const Array& params, bool fHelp)
         nWeight = pwalletMain->GetStakeWeight();
 
     // Define block rewards
-    int64_t nRewardPoW = GetProofOfWorkReward(0);
-    int64_t nRewardPoS = GetProofOfStakeReward(0);
+    int64_t nRewardPoW = GetProofOfWorkReward(pindexBest, 0);
+    int64_t nRewardPoS = GetProofOfStakeReward(pindexBest, 0);
     CTxIn vin;
     CScript payee;
     if(masternodePayments.GetWinningMasternode(pindexBest->nHeight+1, vin, payee))
     {   
-        int64_t tier2Bonus = GetTier2MasternodeBonusPayment(vin);
+        int64_t tier2Bonus = GetTier2MasternodeBonusPayment(pindexBest, vin);
         nRewardPoW += tier2Bonus;
         nRewardPoS += tier2Bonus;
     } 
@@ -686,8 +686,8 @@ Value getblocktemplate(const Array& params, bool fHelp)
     result.push_back(Pair("transactions", transactions));
 
     // Set Masternode / DevOps payments
-    int64_t masternodePayment = GetMasternodePayment();
-    int64_t devopsPayment = GetDevOpsPayment();
+    int64_t masternodePayment = GetMasternodePayment(pindexPrev);
+    int64_t devopsPayment = GetDevOpsPayment(pindexPrev);
     std::string devopsPayee = Params().DevOpsAddress();
     std::string masternodePayee;
 
@@ -699,7 +699,7 @@ Value getblocktemplate(const Array& params, bool fHelp)
         ExtractDestination(payee, address1);
         CBitcoinAddress address2(address1);
         masternodePayee = address2.ToString().c_str();
-        masternodePayment += GetTier2MasternodeBonusPayment(vin);
+        masternodePayment += GetTier2MasternodeBonusPayment(pindexPrev, vin);
     } 
     else 
     {
