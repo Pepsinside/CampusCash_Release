@@ -2708,13 +2708,12 @@ bool CBlock::IsRewardStructureValid(CBlockIndex* pindexLast)
         } 
         else 
         {
-            containsMasternodePayment = true;
             LogPrintf("WARNING: IsRewardStructureValid() : Could not find Masternode winner!\n");
         }
     }
 
     if(!containsMasternodePayment)
-        return DoS(50, error("IsRewardStructureValid() : Masternode payment missing or incorrect"));
+        return DoS(100, error("IsRewardStructureValid() : Masternode payment missing or incorrect"));
         
     if(!containsDevopsPayment)
         return DoS(100, error("IsRewardStructureValid() : Devops payment missing or incorrect"));
