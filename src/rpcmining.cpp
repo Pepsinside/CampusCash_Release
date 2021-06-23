@@ -14,6 +14,7 @@
 #include "init.h"
 #include "miner.h"
 #include "kernel.h"
+#include "mnengine.h"
 
 #include <boost/assign/list_of.hpp>
 
@@ -191,6 +192,9 @@ Value checkkernel(const Array& params, bool fHelp)
     if (IsInitialBlockDownload())
         throw JSONRPCError(-10, "CampusCash is downloading blocks...");
 
+    if (!mnEnginePool.IsMasternodeListSynced())
+        throw JSONRPCError(RPC_CLIENT_SYNCING_MN_LIST, "CampusCash is syncing the masternodes list...");
+
     COutPoint kernel;
     CBlockIndex* pindexPrev = pindexBest;
     unsigned int nBits = GetNextTargetRequired(pindexPrev, true);
@@ -285,6 +289,9 @@ Value getworkex(const Array& params, bool fHelp)
 
     if (IsInitialBlockDownload())
         throw JSONRPCError(-10, "CampusCash is downloading blocks...");
+
+    if (!mnEnginePool.IsMasternodeListSynced())
+        throw JSONRPCError(RPC_CLIENT_SYNCING_MN_LIST, "CampusCash is syncing the masternodes list...");    
 
     if (pindexBest->nHeight >= Params().EndPoWBlock()){
         if(pindexBest->GetBlockTime() >= nPoWToggle){
@@ -424,6 +431,9 @@ Value getwork(const Array& params, bool fHelp)
 
     if (IsInitialBlockDownload())
         throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "CampusCash is downloading blocks...");
+
+    if (!mnEnginePool.IsMasternodeListSynced())
+        throw JSONRPCError(RPC_CLIENT_SYNCING_MN_LIST, "CampusCash is syncing the masternodes list...");
 
     if(pindexBest->nHeight >= Params().EndPoWBlock_v2()){
         throw JSONRPCError(RPC_MISC_ERROR, "No more PoW blocks");
@@ -578,6 +588,9 @@ Value getblocktemplate(const Array& params, bool fHelp)
 
     if (IsInitialBlockDownload())
         throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "CampusCash is downloading blocks...");
+
+    if (!mnEnginePool.IsMasternodeListSynced())
+        throw JSONRPCError(RPC_CLIENT_SYNCING_MN_LIST, "CampusCash is syncing the masternodes list...");
 
     if(pindexBest->nHeight >= Params().EndPoWBlock_v2()){
         throw JSONRPCError(RPC_MISC_ERROR, "No more PoW blocks");

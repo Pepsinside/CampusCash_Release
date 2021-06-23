@@ -37,6 +37,7 @@ CActiveMasternode activeMasternode;
 
 // count peers we've requested the list from
 int RequestedMasterNodeList = 0;
+bool IsInitialMasterNodeListSync = true;
 
 /* *** BEGIN MASTERNODE MAGIC - DASH **********
     Copyright (c) 2014-2015, Dash Developers
@@ -137,6 +138,33 @@ bool CMNenginePool::IsBlockchainSynced()
     fBlockchainSynced = true;
 
     return true;
+}
+
+bool IsMasternodeListSynced()
+{
+    static bool fMNlistSynced = false;
+    static int64_t lastProcess = GetTime();
+
+    if(IsInitialBlockDownload()) return false;
+
+    // if the last call to this function was more than 60 minutes ago (client was in sleep mode) reset the sync process
+    if(GetTime() - lastProcess > 60*60) {
+        fMNlistSynced = false;
+        IsInitialMasterNodeListSync = true;
+        RequestedMasterNodeList = 0;
+        mnodeman.lastDseeReceivedTime = 0;
+    }
+    lastProcess = GetTime();
+
+    if(IsInitialMasterNodeListSync && RequestedMasterNodeList > 0 && mnodeman.lastDseeReceivedTime != 0 && GetTime() - mnodeman.lastDseeReceivedTime > 15)
+    {
+        IsInitialMasterNodeListSync = false;
+        fMNlistSynced = true;
+    }
+
+    if(fMNlistSynced) return true;
+    
+    return false;
 }
 
 //
@@ -1254,6 +1282,20 @@ void ThreadCheckMNenginePool()
 
             if(mnEnginePool.GetState() == POOL_STATUS_IDLE && c % 15 == 0){
             }
-        }
+
+            if(c % 5 == 1 && RequestedMasterNodeList < 3)
+            {
+                bool fIsInitialDownload = IsInitialBlockDownload();
+                if(!fIsInitialDownload) 
+                {
+                    LOCK(cs_vNodes);
+                    BOOST_FOREACH(CNode* pnode, vNodes)
+                    {
+                        if(mnodeman.DsegUpdate(pnode)) //request full mn list
+                            RequestedMasterNodeList++;
+                    }
+                }
+            }
+        }    
     }
 }

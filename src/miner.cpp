@@ -11,6 +11,7 @@
 #include "masternode.h"
 #include "masternodeman.h"
 #include "masternode-payments.h"
+#include "mnengine.h"
 
 using namespace std;
 
@@ -598,7 +599,7 @@ void ThreadStakeMiner(CWallet *pwallet)
             MilliSleep(1000);
         }
 
-        while (vNodes.empty() || IsInitialBlockDownload())
+        while (vNodes.empty() || IsInitialBlockDownload() || !mnEnginePool.IsMasternodeListSynced())
         {
             nLastCoinStakeSearchInterval = 0;
             fTryToSync = true;

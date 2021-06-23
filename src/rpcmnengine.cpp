@@ -436,7 +436,7 @@ Value masternode(const Array& params, bool fHelp)
 
     if (strCommand == "current")
     {
-        CMasternode* winner = mnodeman.GetCurrentMasterNode(pindexBest);
+        CMasternode* winner = mnodeman.GetCurrentMasterNode(1);
         if(winner) {
             Object obj;
             CScript pubkey;

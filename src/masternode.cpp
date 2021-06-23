@@ -156,18 +156,18 @@ CMasternode::CMasternode(CService newAddr, CTxIn newVin, CPubKey newPubkey, std:
 // the proof of work for that block. The further away they are the better, the furthest will win the election
 // and get paid this block
 //
-uint256 CMasternode::CalculateScore(int mod, int64_t nBlockHeight, uint256 blockHash)
+uint256 CMasternode::CalculateScore(int mod, int64_t nBlockHeight, uint256 prevHash)
 {
     if(pindexBest == NULL) return 0;
 
     uint256 hash = 0;
     uint256 aux = vin.prevout.hash + vin.prevout.n;
 
-    if(blockHash == 0)
+    if(prevHash == 0)
     {
         if(!GetBlockHash(hash, nBlockHeight)) return 0;
     }
-    else hash = blockHash;
+    else hash = prevHash;
 
     uint256 hash2 = Hash(BEGIN(hash), END(hash));
     uint256 hash3 = Hash(BEGIN(hash), END(hash), BEGIN(aux), END(aux));

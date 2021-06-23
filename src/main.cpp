@@ -2700,10 +2700,8 @@ bool CBlock::IsRewardStructureValid(CBlockIndex* pindexLast)
         containsMasternodePayment = true;
     }   
 
-    if (!IsInitialBlockDownload() && !fLiteMode && containsMasternodePayment)
+    if (!IsInitialBlockDownload() && !fLiteMode && !fImporting && !fReindex && mnEnginePool.IsMasternodeListSynced() && containsMasternodePayment)
     {
-        containsMasternodePayment = false;
-
         CTxIn vin;
         if(masternodePayments.GetWinningMasternode(pindexLast, vin, masternodePayee))
         {   
@@ -2712,19 +2710,6 @@ bool CBlock::IsRewardStructureValid(CBlockIndex* pindexLast)
             BOOST_FOREACH(CTxOut& txOut, vtx[nTxIndex].vout)
             {
                 if(txOut.scriptPubKey == masternodePayee && txOut.nValue == masternodePayment) containsMasternodePayment = true;
-            }
-
-            if(!containsMasternodePayment)
-            {
-                //TODO Remove this after beta-test
-                /*
-                if(mnodeman.IsPayeeAnExpiredMasternode(vtx[nTxIndex].vout[nMasternodeIndex].scriptPubKey))
-                    containsMasternodePayment = true;
-                
-                else{*/
-                    containsMasternodePayment = true;
-                    LogPrintf("WARNING: IsRewardStructureValid() : Wrong Masternode winner\n");
-               /* }*/
             }
         } 
         else 
@@ -2735,10 +2720,10 @@ bool CBlock::IsRewardStructureValid(CBlockIndex* pindexLast)
     }
 
     if(!containsMasternodePayment)
-        return error("IsRewardStructureValid() : Masternode payment missing or incorrect");
+        return DoS(50, error("IsRewardStructureValid() : Masternode payment missing or incorrect"));
         
     if(!containsDevopsPayment)
-        return error("IsRewardStructureValid() : Devops payment missing or incorrect");
+        return DoS(100, error("IsRewardStructureValid() : Devops payment missing or incorrect"));
     
     LogPrintf("IsRewardStructureValid() : Reward structure is valid\n");
     
