@@ -78,7 +78,6 @@ public:
         {
                 LOCK(cs);
                 unsigned char nVersion = 0;
-                int64_t lastDseeReceivedTime = 0;
                 READWRITE(nVersion);
                 READWRITE(vMasternodes);
                 READWRITE(mAskedUsForMasternodeList);

@@ -2676,8 +2676,6 @@ bool CBlock::IsRewardStructureValid(CBlockIndex* pindexLast)
     CScript masternodePayee = devopsPayee;
 
     int nTxIndex = IsProofOfStake() ? 1 : 0;
-    int nMasternodeIndex;
-    int nCount=0;
     bool containsDevopsPayment = false;
     bool containsMasternodePayment = false;
     
@@ -2687,16 +2685,12 @@ bool CBlock::IsRewardStructureValid(CBlockIndex* pindexLast)
             containsDevopsPayment = true;
         if(!IsProofOfStake() && (txOut.nValue == masternodePayment || txOut.nValue == masternodePayment + nTier2MasternodeBonusFees))
         { 
-            nMasternodeIndex = nCount;
             containsMasternodePayment = true;
         }
-
-        nCount++;
     }
 
     if(IsProofOfStake() && (vtx[1].vout[vtx[1].vout.size()-2].nValue == masternodePayment || vtx[1].vout[vtx[1].vout.size()-2].nValue == masternodePayment + nTier2MasternodeBonusFees))
     {
-        nMasternodeIndex = vtx[1].vout.size()-2;
         containsMasternodePayment = true;
     }   
 

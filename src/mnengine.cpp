@@ -140,7 +140,7 @@ bool CMNenginePool::IsBlockchainSynced()
     return true;
 }
 
-bool IsMasternodeListSynced()
+bool CMNenginePool::IsMasternodeListSynced()
 {
     static bool fMNlistSynced = false;
     static int64_t lastProcess = GetTime();
