@@ -38,6 +38,7 @@ CActiveMasternode activeMasternode;
 // count peers we've requested the list from
 int RequestedMasterNodeList = 0;
 bool IsInitialMasterNodeListSync = true;
+int64_t FirstMasterNodeListRequestTime = 0;
 
 /* *** BEGIN MASTERNODE MAGIC - DASH **********
     Copyright (c) 2014-2015, Dash Developers
@@ -157,6 +158,12 @@ bool CMNenginePool::IsMasternodeListSynced()
     lastProcess = GetTime();
 
     if(IsInitialMasterNodeListSync && RequestedMasterNodeList > 0 && mnodeman.lastDseeReceivedTime != 0 && GetTime() - mnodeman.lastDseeReceivedTime > 15)
+    {
+        IsInitialMasterNodeListSync = false;
+        fMNlistSynced = true;
+    }
+
+    if(IsInitialMasterNodeListSync && RequestedMasterNodeList >= 3 && GetTime() - FirstMasterNodeListRequestTime > 3*60)
     {
         IsInitialMasterNodeListSync = false;
         fMNlistSynced = true;
@@ -1259,7 +1266,7 @@ void ThreadCheckMNenginePool()
         //masternodeSync.Process();
 
 
-        if(mnEnginePool.IsBlockchainSynced()) {
+        if(!IsInitialBlockDownload()) {
 
             c++;
 
@@ -1292,7 +1299,10 @@ void ThreadCheckMNenginePool()
                     BOOST_FOREACH(CNode* pnode, vNodes)
                     {
                         if(mnodeman.DsegUpdate(pnode)) //request full mn list
+                        {
+                            if(FirstMasterNodeListRequestTime == 0) FirstMasterNodeListRequestTime = GetTime();
                             RequestedMasterNodeList++;
+                        }
                     }
                 }
             }
