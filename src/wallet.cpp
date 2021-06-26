@@ -905,6 +905,46 @@ int CWalletTx::GetRequestCount() const
     return nRequests;
 }
 
+void CWalletTx::GetStakeAmounts(CAmount& nFee, CAmount& nAmount, string& strSentAccount, CTxDestination& address, const isminefilter& filter) const
+{
+    LOCK(pwallet->cs_wallet);
+    nFee = 0;
+    nAmount = 0;
+    strSentAccount = "";
+    
+    if(!vout[0].scriptPubKey.empty()) return;
+
+    CAmount nDebit = GetDebit(filter);
+    CAmount nCredit = 0;
+    CScript payee;
+
+    if(nDebit > 0) payee = vin[0].prevPubKey;
+    else return;
+
+    strSentAccount = strFromAccount;
+
+    BOOST_FOREACH(const CTxOut& txout, vout)
+    {
+        // Skip special stake out
+        if (txout.scriptPubKey.empty())
+            continue;
+        if (txout.scriptPubKey != payee)
+            continue;    
+
+        if (!ExtractDestination(txout.scriptPubKey, address))
+        {
+            LogPrintf("CWalletTx::GetAmounts: Unknown transaction type found, txid %s\n",
+                     this->GetHash().ToString());
+            address = CNoDestination();
+        }
+
+        nCredit += txout.nValue;
+    }
+
+    nAmount = nCredit - nDebit;
+    nFee = GetValueOut() - nCredit;
+}
+
 void CWalletTx::GetAmounts(list<pair<CTxDestination, int64_t> >& listReceived,
                            list<pair<CTxDestination, int64_t> >& listSent, CAmount& nFee, string& strSentAccount, const isminefilter& filter) const
 {
