@@ -1577,8 +1577,6 @@ void ListStakeRewards(const CWalletTx& wtx, Array& ret, const isminefilter& filt
     string strSentAccount;
     CTxDestination address;
 
-    bool involvesWatchonly = wtx.IsFromMe(ISMINE_WATCH_ONLY);
-
     // Stakes
     if(wtx.IsCoinStake())
     {
@@ -1589,8 +1587,6 @@ void ListStakeRewards(const CWalletTx& wtx, Array& ret, const isminefilter& filt
             Object entry;
             string account;
             
-            if(involvesWatchonly || (::IsMine(*pwalletMain, address) & ISMINE_WATCH_ONLY))
-                entry.push_back(Pair("involvesWatchonly", true));
             if (pwalletMain->mapAddressBook.count(address))
                 account = pwalletMain->mapAddressBook[address];
             entry.push_back(Pair("account", account));
@@ -1626,13 +1622,12 @@ void ListStakeRewards(const CWalletTx& wtx, Array& ret, const isminefilter& filt
 
 Value liststakerewards(const Array& params, bool fHelp)
 {
-    if (fHelp || params.size() > 2)
+    if (fHelp || params.size() > 1)
         throw runtime_error(
-            "liststakerewards (count includeWatchonly)\n"
+            "liststakerewards (count)\n"
             "\nReturns up to 'count' most recent stake rewards.\n"
             "\nArguments:\n"
             "1. count          (numeric, optional, default=10) The number of transactions to return\n"
-            "2. includeWatchonly (bool, optional, default=false) Include transactions to watchonly addresses (see 'importaddress')\n"
 
             "\nResult:\n"
             "[\n"
@@ -1655,10 +1650,8 @@ Value liststakerewards(const Array& params, bool fHelp)
     int nCount = 10;
     if (params.size() > 0)
         nCount = params[0].get_int();
-    isminefilter filter = ISMINE_SPENDABLE;
-    if(params.size() > 1)
-        if(params[1].get_bool())
-            filter = filter | ISMINE_WATCH_ONLY;
+    
+    isminefilter filter = ISMINE_ALL;
 
     if (nCount < 0)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Negative count");

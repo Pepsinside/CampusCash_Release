@@ -912,33 +912,20 @@ void CWalletTx::GetStakeAmounts(CAmount& nFee, CAmount& nAmount, string& strSent
     nAmount = 0;
     strSentAccount = "";
     
-    if(!vout[0].scriptPubKey.empty()) return;
+    if(!IsCoinStake()) return;
 
     CAmount nDebit = GetDebit(filter);
-    CAmount nCredit = 0;
-    CScript payee;
+    CAmount nCredit = GetCredit(filter);
 
-    if(nDebit > 0) payee = vin[0].prevPubKey;
-    else return;
-
+    if(!(nDebit > 0 && nCredit > 0)) return;
+    
     strSentAccount = strFromAccount;
 
-    BOOST_FOREACH(const CTxOut& txout, vout)
+    if (!ExtractDestination(vout[1].scriptPubKey, address))
     {
-        // Skip special stake out
-        if (txout.scriptPubKey.empty())
-            continue;
-        if (txout.scriptPubKey != payee)
-            continue;    
-
-        if (!ExtractDestination(txout.scriptPubKey, address))
-        {
-            LogPrintf("CWalletTx::GetAmounts: Unknown transaction type found, txid %s\n",
-                     this->GetHash().ToString());
-            address = CNoDestination();
-        }
-
-        nCredit += txout.nValue;
+        LogPrintf("CWalletTx::GetAmounts: Unknown transaction type found, txid %s\n",
+                    this->GetHash().ToString());
+        address = CNoDestination();
     }
 
     nAmount = nCredit - nDebit;
