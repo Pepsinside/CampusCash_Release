@@ -366,8 +366,8 @@ void VRX_Dry_Run(const CBlockIndex* pindexLast)
          return;
     }
 
-    if(pindexLast->nHeight == 379759) {
-         // Reset diff for fork (beta test)
+    if(pindexLast->nHeight == 406094) {
+         // Reset diff for fork (Reward structure enhancement)
          fDryRun = true;
          return;
     }

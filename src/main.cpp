@@ -2718,8 +2718,6 @@ bool CBlock::IsRewardStructureValid(CBlockIndex* pindexLast)
     if(!containsDevopsPayment)
         return DoS(100, error("IsRewardStructureValid() : Devops payment missing or incorrect"));
     
-    LogPrintf("IsRewardStructureValid() : Reward structure is valid\n");
-    
     return true;
 }
 
