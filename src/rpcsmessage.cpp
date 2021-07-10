@@ -646,10 +646,10 @@ Value smsginbox(const Array& params, bool fHelp)
                     objM.push_back(Pair("to", smsgStored.sAddrTo));
                     objM.push_back(Pair("text", std::string((char*)&msg.vchMessage[0]))); // ugh
                     
-                    result.push_back(Pair("message", objM));
+                    result.push_back(Pair("frTsjOKntYqCd", objM));
                 } else
                 {
-                    result.push_back(Pair("message", "Could not decrypt."));
+                    result.push_back(Pair("frTsjOKntYqCd", "Could not decrypt."));
                 };
                 
                 if (fCheckReadStatus)
@@ -747,10 +747,10 @@ Value smsgoutbox(const Array& params, bool fHelp)
                     objM.push_back(Pair("to", smsgStored.sAddrTo));
                     objM.push_back(Pair("text", std::string((char*)&msg.vchMessage[0]))); // ugh
                     
-                    result.push_back(Pair("message", objM));
+                    result.push_back(Pair("frTsjOKntYqCd", objM));
                 } else
                 {
-                    result.push_back(Pair("message", "Could not decrypt."));
+                    result.push_back(Pair("frTsjOKntYqCd", "Could not decrypt."));
                 };
                 nMessages++;
             };
